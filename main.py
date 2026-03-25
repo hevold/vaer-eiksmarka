@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Eiksmarka Værvarsel
+Fredrikstad Værvarsel
 
 Henter daglig værvarsling time for time fra MET Norway Locationforecast API
 og sender til e-post kl. 07:00 hver morgen.
@@ -22,17 +22,17 @@ from datetime import datetime, timezone, timedelta
 
 load_dotenv()
 
-# Eiksmarka, Oslo
-LAT = 59.9333
-LON = 10.5833
-ALTITUDE = 150  # meter over havet
+# Fredrikstad
+LAT = 59.2181
+LON = 10.9298
+ALTITUDE = 10  # meter over havet
 
 # MET Locationforecast API
 MET_API_URL = (
     f"https://api.met.no/weatherapi/locationforecast/2.0/compact"
     f"?lat={LAT}&lon={LON}&altitude={ALTITUDE}"
 )
-USER_AGENT = "EiksmarkaVaervarsel/1.0 hevold@gmail.com"
+USER_AGENT = "FredrikstadVaervarsel/1.0 hevold@gmail.com"
 
 # Miljøvariabler
 GMAIL_USER = os.getenv("GMAIL_USER")
@@ -180,7 +180,7 @@ def format_email_html(today_str, hourly):
     <div style="max-width:580px;margin:0 auto;background:white;border-radius:12px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.1);">
       <div style="background:linear-gradient(135deg,#1a6fa3,#56b4e9);padding:28px 30px;color:white;">
         <h1 style="margin:0;font-size:22px;font-weight:700;">Daglig værvarsling</h1>
-        <p style="margin:6px 0 0;font-size:16px;opacity:0.9;">Eiksmarka, Oslo</p>
+        <p style="margin:6px 0 0;font-size:16px;opacity:0.9;">Fredrikstad, Oslo</p>
         <p style="margin:4px 0 0;font-size:14px;opacity:0.75;">{today_str}</p>
       </div>
       <div style="padding:10px 0;">
@@ -208,7 +208,7 @@ def format_email_html(today_str, hourly):
 
 def format_email_plain(today_str, hourly):
     """Plain text fallback"""
-    lines = [f"Værvarsling Eiksmarka – {today_str}", "=" * 55, ""]
+    lines = [f"Værvarsling Fredrikstad – {today_str}", "=" * 55, ""]
     lines.append(f"{'Kl.':<6} {'Temp':>6}  {'Vær':<24} {'Nedbør':>8}  Vind")
     lines.append("-" * 55)
     for h in hourly:
@@ -230,7 +230,7 @@ def send_slack(today_str, hourly):
         print("SLACK_WEBHOOK_URL ikke satt – hopper over Slack")
         return
 
-    lines = [f"*Værvarsling Eiksmarka – {today_str}*", "```"]
+    lines = [f"*Værvarsling Fredrikstad – {today_str}*", "```"]
     lines.append(f"{'Kl.':<6} {'Temp':>6}  {'Vær':<22} {'Nedbør':>8}  Vind")
     lines.append("-" * 53)
     for h in hourly:
@@ -268,7 +268,7 @@ def send_email(subject, plain_body, html_body):
 
 def main():
     print("=" * 60)
-    print(f"Eiksmarka Værvarsel – {datetime.now().strftime('%Y-%m-%d %H:%M')}")
+    print(f"Fredrikstad Værvarsel – {datetime.now().strftime('%Y-%m-%d %H:%M')}")
     print("=" * 60)
 
     # Valider miljøvariabler
@@ -294,7 +294,7 @@ def main():
     # Lag og send e-post
     now = datetime.now(timezone.utc) + timedelta(hours=1)
     today_str = format_date_norwegian(now)
-    subject = f"Vær Eiksmarka – {now.strftime('%-d. %b')}"
+    subject = f"Vær Fredrikstad – {now.strftime('%-d. %b')}"
 
     send_email(
         subject=subject,
