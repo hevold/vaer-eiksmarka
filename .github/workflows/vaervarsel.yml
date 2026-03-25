@@ -1,0 +1,31 @@
+name: Eiksmarka Værvarsel
+
+on:
+  schedule:
+    # Kl. 07:00 norsk tid (06:00 UTC om vinteren, 05:00 UTC om sommeren)
+    # Bruker 06:00 UTC – dekker CET (UTC+1). Juster til 05:00 UTC for sommertid.
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Tillat manuell kjøring for testing
+
+jobs:
+  send-weather:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r examples/email-notification/eiksmarka-vaervarsel/requirements.txt
+
+      - name: Send værvarsling
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          EMAIL_RECIPIENTS: ${{ secrets.EMAIL_RECIPIENTS }}
+        run: python examples/email-notification/eiksmarka-vaervarsel/main.py
