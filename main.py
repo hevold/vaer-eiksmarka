@@ -16,11 +16,11 @@ import sys
 import smtplib
 import requests
 from dotenv import load_dotenv
-
-load_dotenv()
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timezone, timedelta
+
+load_dotenv()
 
 # Eiksmarka, Oslo
 LAT = 59.9333
@@ -38,6 +38,7 @@ USER_AGENT = "EiksmarkaVaervarsel/1.0 hevold@gmail.com"
 GMAIL_USER = os.getenv("GMAIL_USER")
 GMAIL_APP_PASSWORD = os.getenv("GMAIL_APP_PASSWORD")
 EMAIL_RECIPIENTS = [r.strip() for r in os.getenv("EMAIL_RECIPIENTS", "").split(",") if r.strip()]
+SLACK_WEBHOOK_URL = os.getenv("SLACK_WEBHOOK_URL")
 
 # Norske værbeskrivelser
 WEATHER_SYMBOLS = {
@@ -223,6 +224,32 @@ def format_email_plain(today_str, hourly):
     return "\n".join(lines)
 
 
+def send_slack(today_str, hourly):
+    """Send værvarsling til Slack via Incoming Webhook"""
+    if not SLACK_WEBHOOK_URL:
+        print("SLACK_WEBHOOK_URL ikke satt – hopper over Slack")
+        return
+
+    lines = [f"*Værvarsling Eiksmarka – {today_str}*", "```"]
+    lines.append(f"{'Kl.':<6} {'Temp':>6}  {'Vær':<22} {'Nedbør':>8}  Vind")
+    lines.append("-" * 53)
+    for h in hourly:
+        desc = get_weather_description(h["symbol"])
+        temp = f"{h['temp']:.0f}°C" if h["temp"] is not None else "–"
+        precip = f"{h['precipitation']:.1f}mm" if h["precipitation"] else "–"
+        wind = (
+            f"{h['wind_speed']:.0f}m/s {wind_direction_text(h['wind_dir'])}"
+            if h["wind_speed"] is not None else "–"
+        )
+        lines.append(f"{h['time']:<6} {temp:>6}  {desc:<22} {precip:>8}  {wind}")
+    lines.append("```")
+
+    payload = {"text": "\n".join(lines)}
+    response = requests.post(SLACK_WEBHOOK_URL, json=payload, timeout=10)
+    response.raise_for_status()
+    print("Slack-melding sendt")
+
+
 def send_email(subject, plain_body, html_body):
     """Send e-post via Gmail SMTP"""
     msg = MIMEMultipart("alternative")
@@ -274,6 +301,7 @@ def main():
         plain_body=format_email_plain(today_str, hourly),
         html_body=format_email_html(today_str, hourly),
     )
+    send_slack(today_str, hourly)
 
     print("=" * 60)
     print("Ferdig!")
